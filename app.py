@@ -57,6 +57,15 @@ if uploaded_files:
         st.session_state.conversation = create_conversation_chain(
             st.session_state.vector_store
         )
+
+        # Display processed document content
+        with st.expander("View Processed Documents", expanded=False):
+            st.markdown("### Document Content")
+            st.markdown(
+                f"<div class='document-content'>{all_text}</div>",
+                unsafe_allow_html=True
+            )
+
         st.success("Documents processed successfully!")
 
 # Chat interface

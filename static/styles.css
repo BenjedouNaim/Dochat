@@ -31,3 +31,15 @@
     border: 1px solid #dee2e6;
     border-radius: 0.5rem;
 }
+
+.document-content {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    font-family: monospace;
+    white-space: pre-wrap;
+    margin: 1rem 0;
+}
