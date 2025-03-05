@@ -8,10 +8,9 @@ import numpy as np
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.chat_models import ChatOpenAI
-from langchain.chains import RunnableSequence
-from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.prompts import PromptTemplate
 from langchain_community.vectorstores import FAISS
+from langchain.chains.question_answering import load_qa_chain
 
 def extract_text_from_pdf(pdf_file) -> str:
     """Extract text from uploaded PDF file."""
@@ -37,38 +36,36 @@ def create_vector_store(text_chunks: List[str]) -> FAISS:
     vector_store = FAISS.from_texts(text_chunks, embeddings)
     return vector_store
 
-def create_conversation_chain(vector_store: FAISS) -> RunnableSequence:
+def create_conversation_chain(vector_store: FAISS):
     """Create conversation chain."""
     llm = ChatOpenAI(temperature=0.7)
 
-    # Create the question answering prompt
-    prompt = PromptTemplate.from_template(
-        """Answer the following question based on the provided context:
+    prompt_template = """Use the following pieces of context to answer the question at the end. 
+    If you don't know the answer, just say that you don't know, don't try to make up an answer.
 
-        Context: {context}
+    Context: {context}
 
-        Question: {question}
+    Question: {question}
 
-        Answer:"""
+    Answer:"""
+
+    PROMPT = PromptTemplate(
+        template=prompt_template, input_variables=["context", "question"]
     )
 
-    # Create the document chain
-    document_chain = create_stuff_documents_chain(llm, prompt)
-
-    # Create the retrieval chain
-    retrieval_chain = vector_store.as_retriever() | document_chain
-
-    return retrieval_chain
+    chain = load_qa_chain(llm, chain_type="stuff", prompt=PROMPT)
+    return chain, vector_store
 
 def get_conversation_response(
-    conversation_chain: RunnableSequence,
+    conversation_chain,
     question: str
 ) -> Dict:
     """Get response from conversation chain."""
-    response = conversation_chain.invoke({
-        "question": question
-    })
+    chain, vector_store = conversation_chain
+    docs = vector_store.similarity_search(question)
+    response = chain({"input_documents": docs, "question": question})
+
     return {
-        "answer": response,
-        "source_documents": []  # Updated to match new chain response format
+        "answer": response["output_text"],
+        "source_documents": docs
     }
