@@ -8,8 +8,9 @@ import numpy as np
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.chat_models import ChatOpenAI
-from langchain_community.chains import RetrievalQA
-from langchain.memory import ConversationBufferMemory
+from langchain.chains import RunnableSequence
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.prompts import PromptTemplate
 from langchain_community.vectorstores import FAISS
 
 def extract_text_from_pdf(pdf_file) -> str:
@@ -36,31 +37,38 @@ def create_vector_store(text_chunks: List[str]) -> FAISS:
     vector_store = FAISS.from_texts(text_chunks, embeddings)
     return vector_store
 
-def create_conversation_chain(vector_store: FAISS) -> RetrievalQA:
-    """Create conversation chain with memory."""
+def create_conversation_chain(vector_store: FAISS) -> RunnableSequence:
+    """Create conversation chain."""
     llm = ChatOpenAI(temperature=0.7)
-    memory = ConversationBufferMemory(
-        memory_key='chat_history',
-        return_messages=True,
-        output_key='answer'
+
+    # Create the question answering prompt
+    prompt = PromptTemplate.from_template(
+        """Answer the following question based on the provided context:
+
+        Context: {context}
+
+        Question: {question}
+
+        Answer:"""
     )
 
-    conversation_chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        chain_type="stuff",
-        retriever=vector_store.as_retriever(),
-        memory=memory,
-        return_source_documents=True,
-    )
-    return conversation_chain
+    # Create the document chain
+    document_chain = create_stuff_documents_chain(llm, prompt)
+
+    # Create the retrieval chain
+    retrieval_chain = vector_store.as_retriever() | document_chain
+
+    return retrieval_chain
 
 def get_conversation_response(
-    conversation_chain: RetrievalQA,
+    conversation_chain: RunnableSequence,
     question: str
 ) -> Dict:
     """Get response from conversation chain."""
-    response = conversation_chain({"query": question})
+    response = conversation_chain.invoke({
+        "question": question
+    })
     return {
-        "answer": response["result"],
-        "source_documents": response["source_documents"]
+        "answer": response,
+        "source_documents": []  # Updated to match new chain response format
     }
