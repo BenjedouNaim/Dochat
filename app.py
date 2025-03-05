@@ -48,7 +48,7 @@ if uploaded_files:
             else:  # txt file
                 text = file.read().decode()
             all_text += text + "\n\n"
-        
+
         # Create text chunks and vector store
         text_chunks = process_text(all_text)
         st.session_state.vector_store = create_vector_store(text_chunks)
@@ -60,7 +60,7 @@ if uploaded_files:
 # Chat interface
 if st.session_state.conversation is not None:
     st.markdown("<div class='chat-container'>", unsafe_allow_html=True)
-    
+
     # Display chat history
     for message in st.session_state.chat_history:
         if message["role"] == "user":
@@ -75,12 +75,12 @@ if st.session_state.conversation is not None:
                 f"<strong>Assistant:</strong><br>{message['content']}</div>",
                 unsafe_allow_html=True
             )
-    
+
     st.markdown("</div>", unsafe_allow_html=True)
-    
+
     # User input
     user_question = st.text_input("Ask a question about your documents:")
-    
+
     if user_question:
         with st.spinner("Thinking..."):
             # Get response from conversation chain
@@ -88,15 +88,15 @@ if st.session_state.conversation is not None:
                 st.session_state.conversation,
                 user_question
             )
-            
+
             # Update chat history
             st.session_state.chat_history.extend([
                 {"role": "user", "content": user_question},
                 {"role": "assistant", "content": response["answer"]}
             ])
-            
+
             # Rerun to update chat display
-            st.experimental_rerun()
+            st.rerun()
 
 else:
     st.info("Please upload documents to start the conversation.")
