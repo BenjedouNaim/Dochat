@@ -12,7 +12,7 @@ from utils import (
 # Page configuration
 st.set_page_config(
     page_title="Document Chat Assistant",
-    page_icon="💬",
+    page_icon="📚",
     layout="wide"
 )
 
@@ -30,13 +30,27 @@ if "vector_store" not in st.session_state:
 if "user_question" not in st.session_state:
     st.session_state.user_question = ""
 
-# Main title
-st.title("📚 Document Chat Assistant")
+# Main header with description
+st.markdown(
+    """
+    <div class='main-header'>
+        <h1>📚 Document Chat Assistant</h1>
+        <p>Upload your documents and start an intelligent conversation about their content.
+        The AI assistant will help you extract insights and answer questions about your documents.</p>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
-# File upload section
+# File upload section with improved UI
 st.markdown("<div class='upload-section'>", unsafe_allow_html=True)
+st.markdown("### 📄 Upload Your Documents")
+st.markdown(
+    "Upload PDF or text files to begin. Multiple files are supported.",
+    help="The assistant will process your documents and allow you to ask questions about their content."
+)
 uploaded_files = st.file_uploader(
-    "Upload your documents (PDF or TXT)",
+    "Drag and drop your files here",
     type=["pdf", "txt"],
     accept_multiple_files=True
 )
@@ -44,7 +58,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 # Process uploaded files
 if uploaded_files:
-    with st.spinner("Processing documents..."):
+    with st.spinner("📚 Processing your documents..."):
         all_text = ""
         for file in uploaded_files:
             if file.type == "application/pdf":
@@ -61,17 +75,18 @@ if uploaded_files:
         )
 
         # Display processed document content
-        with st.expander("View Processed Documents", expanded=False):
+        with st.expander("📝 View Processed Documents", expanded=False):
             st.markdown("### Document Content")
             st.markdown(
                 f"<div class='document-content'>{all_text}</div>",
                 unsafe_allow_html=True
             )
 
-        st.success("Documents processed successfully!")
+        st.success("✅ Documents processed successfully! You can now start asking questions.")
 
 # Chat interface
 if st.session_state.conversation is not None:
+    st.markdown("### 💬 Chat with Your Documents")
     st.markdown("<div class='chat-container'>", unsafe_allow_html=True)
 
     # Display chat history
@@ -94,7 +109,7 @@ if st.session_state.conversation is not None:
     # Function to handle sending messages
     def send_message():
         if st.session_state.user_question:
-            with st.spinner("Thinking..."):
+            with st.spinner("🤔 Thinking..."):
                 # Get response from conversation chain
                 response = get_conversation_response(
                     st.session_state.conversation,
@@ -111,13 +126,15 @@ if st.session_state.conversation is not None:
 
     # User input
     st.text_input(
-        "Ask a question about your documents:",
+        "💭 Ask a question about your documents:",
         key="user_question",
-        on_change=send_message
+        on_change=send_message,
+        placeholder="Type your question here and press Enter..."
     )
 
     # Export conversation button
     if st.session_state.chat_history:
+        st.markdown("### 💾 Save Your Conversation")
         # Convert chat history to DataFrame
         chat_data = []
         for msg in st.session_state.chat_history:
@@ -136,14 +153,20 @@ if st.session_state.conversation is not None:
             data=csv,
             file_name=f"chat_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
             mime='text/csv',
+            help="Download your conversation history as a CSV file"
         )
 
 else:
-    st.info("Please upload documents to start the conversation.")
+    st.info("👋 Please upload your documents to start the conversation!")
 
 # Footer
 st.markdown("---")
 st.markdown(
-    "This AI assistant helps you chat with your documents. "
-    "Upload PDFs or text files to get started!"
+    """
+    <div style='text-align: center; color: #666; padding: 1rem;'>
+        This AI assistant helps you chat with your documents. 
+        Simply upload PDFs or text files to get started!
+    </div>
+    """,
+    unsafe_allow_html=True
 )
