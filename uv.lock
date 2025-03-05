@@ -1,0 +1,33 @@
+# uv.lock
+version = 1
+requires-python = ">=3.11"
+
+[[package]]
+name = "faiss-cpu"
+version = "1.10.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy", version = "2.2.3" }
+]
+
+[[package]]
+name = "langchain"
+version = "0.3.20"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "langchain-core", version = "0.3.41" },
+    { name = "pyyaml", version = "6.0.2" },
+    # ... more transitive dependencies
+]
+
+[[package]]
+name = "streamlit"
+version = "1.43.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "altair", version = "5.5.0" },
+    { name = "pandas", version = "2.2.3" },
+    # ... more
+]
+
+# ... additional packages like google-generativeai, openai, etc.
