@@ -1,4 +1,6 @@
 import streamlit as st
+import pandas as pd
+from datetime import datetime
 from utils import (
     extract_text_from_pdf,
     process_text,
@@ -113,6 +115,28 @@ if st.session_state.conversation is not None:
         key="user_question",
         on_change=send_message
     )
+
+    # Export conversation button
+    if st.session_state.chat_history:
+        # Convert chat history to DataFrame
+        chat_data = []
+        for msg in st.session_state.chat_history:
+            chat_data.append({
+                'Timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'Role': msg['role'].capitalize(),
+                'Message': msg['content']
+            })
+        chat_df = pd.DataFrame(chat_data)
+
+        # Create CSV
+        csv = chat_df.to_csv(index=False)
+
+        st.download_button(
+            label="💾 Export Conversation",
+            data=csv,
+            file_name=f"chat_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            mime='text/csv',
+        )
 
 else:
     st.info("Please upload documents to start the conversation.")
