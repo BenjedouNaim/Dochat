@@ -25,6 +25,8 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 if "vector_store" not in st.session_state:
     st.session_state.vector_store = None
+if "user_question" not in st.session_state:
+    st.session_state.user_question = ""
 
 # Main title
 st.title("📚 Document Chat Assistant")
@@ -78,25 +80,30 @@ if st.session_state.conversation is not None:
 
     st.markdown("</div>", unsafe_allow_html=True)
 
+    # Function to handle sending messages
+    def send_message():
+        if st.session_state.user_question:
+            with st.spinner("Thinking..."):
+                # Get response from conversation chain
+                response = get_conversation_response(
+                    st.session_state.conversation,
+                    st.session_state.user_question
+                )
+
+                # Update chat history
+                st.session_state.chat_history.extend([
+                    {"role": "user", "content": st.session_state.user_question},
+                    {"role": "assistant", "content": response["answer"]}
+                ])
+                # Clear the input
+                st.session_state.user_question = ""
+
     # User input
-    user_question = st.text_input("Ask a question about your documents:")
-
-    if user_question:
-        with st.spinner("Thinking..."):
-            # Get response from conversation chain
-            response = get_conversation_response(
-                st.session_state.conversation,
-                user_question
-            )
-
-            # Update chat history
-            st.session_state.chat_history.extend([
-                {"role": "user", "content": user_question},
-                {"role": "assistant", "content": response["answer"]}
-            ])
-
-            # Rerun to update chat display
-            st.rerun()
+    st.text_input(
+        "Ask a question about your documents:",
+        key="user_question",
+        on_change=send_message
+    )
 
 else:
     st.info("Please upload documents to start the conversation.")
