@@ -16,7 +16,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Load custom CSS
+# Load custom CSS (optional, retained for non-chat styling)
 with open("static/styles.css") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
@@ -27,27 +27,51 @@ if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 if "vector_store" not in st.session_state:
     st.session_state.vector_store = None
-if "user_question" not in st.session_state:
-    st.session_state.user_question = ""
 
-# Main header with description
+# Sidebar for conversation controls
+    st.header("Conversation Controls")
+    if st.session_state.chat_history:
+        if st.button("🗑️ Clear Chat History"):
+            st.session_state.chat_history = []
+            st.rerun()
+        chat_data = [
+            {
+                'Timestamp': msg['timestamp'],
+                'Role': msg['role'].capitalize(),
+                'Message': msg['content']
+            }
+            for msg in st.session_state.chat_history
+        ]
+        chat_df = pd.DataFrame(chat_data)
+        csv = chat_df.to_csv(index=False)
+        st.download_button(
+            label="💾 Export Conversation",
+            data=csv,
+            file_name=f"chat_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            mime='text/csv',
+            help="Download your conversation history as a CSV file"
+        )
+    else:
+        st.info("No conversation history yet.")
+
+# Main header
 st.markdown(
     """
     <div class='main-header'>
         <h1>📚 Document Chat Assistant</h1>
         <p>Upload your documents and start an intelligent conversation about their content.
-        The AI assistant will help you extract insights and answer questions about your documents.</p>
+        The AI assistant will help you extract insights and answer questions.</p>
     </div>
     """,
     unsafe_allow_html=True
 )
 
-# File upload section with improved UI
+# File upload section
 st.markdown("<div class='upload-section'>", unsafe_allow_html=True)
 st.markdown("### 📄 Upload Your Documents")
 st.markdown(
     "Upload PDF or text files to begin. Multiple files are supported.",
-    help="The assistant will process your documents and allow you to ask questions about their content."
+    help="The assistant will process your documents and allow you to ask questions."
 )
 uploaded_files = st.file_uploader(
     "Drag and drop your files here",
@@ -59,103 +83,66 @@ st.markdown("</div>", unsafe_allow_html=True)
 # Process uploaded files
 if uploaded_files:
     with st.spinner("📚 Processing your documents..."):
-        all_text = ""
-        for file in uploaded_files:
-            if file.type == "application/pdf":
-                text = extract_text_from_pdf(file.read())
-            else:  # txt file
-                text = file.read().decode()
-            all_text += text + "\n\n"
+        try:
+            all_text = ""
+            for file in uploaded_files:
+                if file.type == "application/pdf":
+                    text = extract_text_from_pdf(file.read())
+                else:  # txt file
+                    text = file.read().decode()
+                all_text += text + "\n\n"
 
-        # Create text chunks and vector store
-        text_chunks = process_text(all_text)
-        st.session_state.vector_store = create_vector_store(text_chunks)
-        st.session_state.conversation = create_conversation_chain(
-            st.session_state.vector_store
-        )
+            text_chunks = process_text(all_text)
+            st.session_state.vector_store = create_vector_store(text_chunks)
+            st.session_state.conversation = create_conversation_chain(st.session_state.vector_store)
+            st.success("✅ Documents processed successfully! You can now start asking questions.")
 
-        # Display processed document content
-        with st.expander("📝 View Processed Documents", expanded=False):
-            st.markdown("### Document Content")
-            st.markdown(
-                f"<div class='document-content'>{all_text}</div>",
-                unsafe_allow_html=True
-            )
-
-        st.success("✅ Documents processed successfully! You can now start asking questions.")
+            with st.expander("📝 View Processed Documents", expanded=False):
+                st.markdown("### Document Content Preview")
+                preview_text = all_text[:500] + "..." if len(all_text) > 500 else all_text
+                st.markdown(preview_text)
+        except Exception as e:
+            st.error(f"❌ Error processing documents: {str(e)}")
 
 # Chat interface
 if st.session_state.conversation is not None:
     st.markdown("### 💬 Chat with Your Documents")
-    st.markdown("<div class='chat-container'>", unsafe_allow_html=True)
 
     # Display chat history
     for message in st.session_state.chat_history:
-        if message["role"] == "user":
-            st.markdown(
-                f"<div class='chat-message user-message'>"
-                f"<strong>You:</strong><br>{message['content']}</div>",
-                unsafe_allow_html=True
-            )
-        else:
-            st.markdown(
-                f"<div class='chat-message assistant-message'>"
-                f"<strong>Assistant:</strong><br>{message['content']}</div>",
-                unsafe_allow_html=True
-            )
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    # Function to handle sending messages
-    def send_message():
-        if st.session_state.user_question:
-            with st.spinner("🤔 Thinking..."):
-                # Get response from conversation chain
-                response = get_conversation_response(
-                    st.session_state.conversation,
-                    st.session_state.user_question
-                )
-
-                # Update chat history
-                st.session_state.chat_history.extend([
-                    {"role": "user", "content": st.session_state.user_question},
-                    {"role": "assistant", "content": response["answer"]}
-                ])
-                # Clear the input
-                st.session_state.user_question = ""
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
 
     # User input
-    st.text_input(
-        "💭 Ask a question about your documents:",
-        key="user_question",
-        on_change=send_message,
-        placeholder="Type your question here and press Enter..."
+    if prompt := st.chat_input("Ask a question about your documents:"):
+        st.session_state.chat_history.append({
+            "role": "user",
+            "content": prompt,
+            "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        })
+        with st.chat_message("user"):
+            st.markdown(prompt)
+        with st.chat_message("assistant"):
+            with st.spinner("🤔 Thinking..."):
+                response = get_conversation_response(st.session_state.conversation, prompt)
+                st.markdown(response["answer"])
+        st.session_state.chat_history.append({
+            "role": "assistant",
+            "content": response["answer"],
+            "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        })
+
+    # Example questions
+    st.markdown(
+        """
+        **Example questions:**
+        - What is the main topic of the document?
+        - Summarize the key points.
+        - Are there any mentions of [specific term]?
+        """
     )
 
-    # Export conversation button
-    if st.session_state.chat_history:
-        st.markdown("### 💾 Save Your Conversation")
-        # Convert chat history to DataFrame
-        chat_data = []
-        for msg in st.session_state.chat_history:
-            chat_data.append({
-                'Timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                'Role': msg['role'].capitalize(),
-                'Message': msg['content']
-            })
-        chat_df = pd.DataFrame(chat_data)
-
-        # Create CSV
-        csv = chat_df.to_csv(index=False)
-
-        st.download_button(
-            label="💾 Export Conversation",
-            data=csv,
-            file_name=f"chat_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-            mime='text/csv',
-            help="Download your conversation history as a CSV file"
-        )
-
+# Info message if no documents
 else:
     st.info("👋 Please upload your documents to start the conversation!")
 
