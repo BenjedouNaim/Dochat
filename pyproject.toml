@@ -12,4 +12,6 @@ dependencies = [
     "pypdf2>=3.0.1",
     "streamlit>=1.43.0",
     "tiktoken>=0.9.0",
+    "google-generativeai>=0.8.4",
+    "langchain-google-genai>=2.0.10",
 ]

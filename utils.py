@@ -2,12 +2,9 @@ import os
 from typing import List, Dict
 import PyPDF2
 from io import BytesIO
-import tiktoken
-import faiss
-import numpy as np
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.chat_models import ChatOpenAI
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.prompts import PromptTemplate
 from langchain_community.vectorstores import FAISS
 from langchain.chains.question_answering import load_qa_chain
@@ -32,14 +29,14 @@ def process_text(text: str) -> List[str]:
 
 def create_vector_store(text_chunks: List[str]) -> FAISS:
     """Create FAISS vector store from text chunks."""
-    embeddings = OpenAIEmbeddings()
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
     vector_store = FAISS.from_texts(text_chunks, embeddings)
     return vector_store
 
 def create_conversation_chain(vector_store: FAISS):
     """Create conversation chain."""
-    llm = ChatOpenAI(
-        model="gpt-3.5-turbo",
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.0-flash",
         temperature=0.3  # Lower temperature for more focused responses
     )
 
