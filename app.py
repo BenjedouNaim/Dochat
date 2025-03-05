@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import os
 from datetime import datetime
 from utils import (
     extract_text_from_pdf,
@@ -8,6 +9,9 @@ from utils import (
     create_conversation_chain,
     get_conversation_response
 )
+
+# Set the API key in the environment from Streamlit secrets
+os.environ["GOOGLE_API_KEY"] = st.secrets["GOOGLE_API_KEY"]
 
 # Page configuration
 st.set_page_config(
@@ -29,30 +33,30 @@ if "vector_store" not in st.session_state:
     st.session_state.vector_store = None
 
 # Sidebar for conversation controls
-    st.header("Conversation Controls")
-    if st.session_state.chat_history:
-        if st.button("🗑️ Clear Chat History"):
-            st.session_state.chat_history = []
-            st.rerun()
-        chat_data = [
-            {
-                'Timestamp': msg['timestamp'],
-                'Role': msg['role'].capitalize(),
-                'Message': msg['content']
-            }
-            for msg in st.session_state.chat_history
-        ]
-        chat_df = pd.DataFrame(chat_data)
-        csv = chat_df.to_csv(index=False)
-        st.download_button(
-            label="💾 Export Conversation",
-            data=csv,
-            file_name=f"chat_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-            mime='text/csv',
-            help="Download your conversation history as a CSV file"
-        )
-    else:
-        st.info("No conversation history yet.")
+st.header("Conversation Controls")
+if st.session_state.chat_history:
+    if st.button("🗑️ Clear Chat History"):
+        st.session_state.chat_history = []
+        st.rerun()
+    chat_data = [
+        {
+            'Timestamp': msg['timestamp'],
+            'Role': msg['role'].capitalize(),
+            'Message': msg['content']
+        }
+        for msg in st.session_state.chat_history
+    ]
+    chat_df = pd.DataFrame(chat_data)
+    csv = chat_df.to_csv(index=False)
+    st.download_button(
+        label="💾 Export Conversation",
+        data=csv,
+        file_name=f"chat_history_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+        mime='text/csv',
+        help="Download your conversation history as a CSV file"
+    )
+else:
+    st.info("No conversation history yet.")
 
 # Main header
 st.markdown(

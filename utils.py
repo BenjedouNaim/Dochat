@@ -2,11 +2,6 @@ import os
 from typing import List, Dict
 import PyPDF2
 from io import BytesIO
-from dotenv import load_dotenv
-# Load environment variables from .env file
-load_dotenv()
-# Set Google API key from environment
-os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY", "")
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI
