@@ -38,7 +38,10 @@ def create_vector_store(text_chunks: List[str]) -> FAISS:
 
 def create_conversation_chain(vector_store: FAISS):
     """Create conversation chain."""
-    llm = ChatOpenAI(temperature=0.7)
+    llm = ChatOpenAI(
+        model="gpt-3.5-turbo",
+        temperature=0.3  # Lower temperature for more focused responses
+    )
 
     prompt_template = """Use the following pieces of context to answer the question at the end. 
     If you don't know the answer, just say that you don't know, don't try to make up an answer.
