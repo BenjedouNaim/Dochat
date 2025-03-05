@@ -1,0 +1,33 @@
+.chat-message {
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.user-message {
+    background-color: #007bff15;
+    border-left: 6px solid #007bff;
+}
+
+.assistant-message {
+    background-color: #f8f9fa;
+    border-left: 6px solid #28a745;
+}
+
+.upload-section {
+    padding: 2rem;
+    border-radius: 0.5rem;
+    border: 2px dashed #dee2e6;
+    margin-bottom: 2rem;
+    text-align: center;
+}
+
+.chat-container {
+    height: 600px;
+    overflow-y: auto;
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+}
